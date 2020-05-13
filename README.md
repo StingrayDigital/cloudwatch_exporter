@@ -1,3 +1,8 @@
+# Fork Notes
+
+This fork from https://github.com/Technofy/cloudwatch_exporter only update to go modules and also use docker multistep
+build so that golang is not necessary to be installed to build the docker image.
+
 # CloudWatch Exporter
 
 An [AWS CloudWatch](http://aws.amazon.com/cloudwatch/) exporter for [Prometheus](https://github.com/prometheus/prometheus) coded in Go, with multi-region and dynamic target support.
