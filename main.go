@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"cloudwatch_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"cloudwatch_exporter/config"
 	"os"
 	"sync"
 )
@@ -29,6 +29,7 @@ func loadConfigFile() error {
 	var err error
 	var tmpSettings *config.Settings
 	configMutex.Lock()
+	defer configMutex.Unlock()
 
 	// Initial loading of the configuration file
 	tmpSettings, err = config.Load(*configFile)
@@ -37,9 +38,7 @@ func loadConfigFile() error {
 	}
 
 	generateTemplates(tmpSettings)
-
 	settings = tmpSettings
-	configMutex.Unlock()
 
 	return nil
 }
@@ -60,33 +59,38 @@ func handleTarget(w http.ResponseWriter, req *http.Request) {
 	urlQuery := req.URL.Query()
 
 	target := urlQuery.Get("target")
-	task := urlQuery.Get("task")
+	queryTask := urlQuery.Get("task")
 	region := urlQuery.Get("region")
 
+	tasks := []string{}
+
 	// Check if we have all the required parameters in the URL
-	if task == "" {
-		fmt.Fprintln(w, "Error: Missing task parameter")
-		return
+	if queryTask == "" {
+		tasks = settings.TaskNames()
+	} else {
+		tasks = append(tasks, queryTask)
 	}
 
 	configMutex.Lock()
+	defer configMutex.Unlock()
 	registry := prometheus.NewRegistry()
-	collector, err := NewCwCollector(target, task, region)
-	if err != nil {
-		// Can't create the collector, display error
-		fmt.Fprintf(w, "Error: %s\n", err.Error())
-		configMutex.Unlock()
-		return
+
+	for _, task := range tasks {
+		collector, err := NewCwCollector(target, task, region)
+		if err != nil {
+			// Can't create the collector, display error
+			fmt.Fprintf(w, "Error: %s\n", err.Error())
+			return
+		}
+		registry.MustRegister(collector)
 	}
 
-	registry.MustRegister(collector)
 	handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 		DisableCompression: false,
 	})
 
 	// Serve the answer through the Collect method of the Collector
 	handler.ServeHTTP(w, req)
-	configMutex.Unlock()
 }
 
 func main() {
@@ -120,6 +124,12 @@ func main() {
 	// Allows manual reload of the configuration
 	http.HandleFunc("/reload", handleReload)
 
+	http.HandleFunc("/", handleRoot)
+
 	// Start serving for clients
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+}
+
+func handleRoot(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }

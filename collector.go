@@ -1,9 +1,9 @@
 package main
 
 import (
+	"cloudwatch_exporter/config"
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"cloudwatch_exporter/config"
 	"time"
 )
 

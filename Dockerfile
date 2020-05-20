@@ -18,17 +18,17 @@ RUN go build -v -o /bin/cloudwatch_exporter .
 
 FROM alpine:3.11.6
 
-ENV AWS_ACCESS_KEY none
-ENV AWS_SECRET_KEY none
+ENV AWS_ACCESS_KEY_ID none
+ENV AWS_SECRET_ACCESS_KEY none
+ENV AWS_DEFAULT_REGION none
 
 RUN apk add --no-cache ca-certificates
 
 COPY --from=build /bin/cloudwatch_exporter /bin/cloudwatch_exporter
-COPY config.yml   /etc/cloudwatch_exporter/config.yml
 
 RUN chmod +x /bin/cloudwatch_exporter
 
 WORKDIR /bin
 
 EXPOSE      9042
-ENTRYPOINT  [ "/bin/cloudwatch_exporter", "-config.file=/etc/cloudwatch_exporter/config.yml" ]
+ENTRYPOINT  [ "/bin/cloudwatch_exporter", "-config.file=/config/config.yml" ]

@@ -15,7 +15,7 @@ type Metric struct {
 	Statistics            []string            `yaml:"aws_statistics"`
 	Dimensions            []string            `yaml:"aws_dimensions,omitempty"`
 	DimensionsSelect      map[string][]string `yaml:"aws_dimensions_select,omitempty"`
-	DimensionsSelectRegex      map[string]string `yaml:"aws_dimensions_select_regex,omitempty"`
+	DimensionsSelectRegex map[string]string   `yaml:"aws_dimensions_select_regex,omitempty"`
 	DimensionsSelectParam map[string][]string `yaml:"aws_dimensions_select_param,omitempty"`
 
 	RangeSeconds  int `yaml:"range_seconds,omitempty"`
@@ -33,6 +33,14 @@ type Settings struct {
 	AutoReload  bool   `yaml:"auto_reload,omitempty"`
 	ReloadDelay int    `yaml:"auto_reload_delay,omitempty"`
 	Tasks       []Task `yaml:"tasks"`
+}
+
+func (s *Settings) TaskNames() []string {
+	out := []string{}
+	for _, t := range s.Tasks {
+		out = append(out, t.Name)
+	}
+	return out
 }
 
 func (s *Settings) GetTask(name string) (*Task, error) {
